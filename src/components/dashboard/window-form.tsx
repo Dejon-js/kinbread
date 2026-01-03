@@ -68,21 +68,24 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
   return (
     <form action={handleSubmit} className="space-y-6">
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" id="form-error" role="alert" aria-live="polite">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
-        <Alert>
+        <Alert id="form-success" role="status" aria-live="polite">
           <AlertDescription>{success}</AlertDescription>
         </Alert>
       )}
 
       {!isEditing && (
-        <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
+        <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit" role="tablist" aria-label="Date selection mode">
           <button
             type="button"
+            role="tab"
+            aria-selected={!isRangeMode}
+            aria-controls="single-date-panel"
             onClick={() => setIsRangeMode(false)}
             className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
               !isRangeMode
@@ -94,6 +97,9 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={isRangeMode}
+            aria-controls="range-date-panel"
             onClick={() => setIsRangeMode(true)}
             className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
               isRangeMode
@@ -107,7 +113,7 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
       )}
 
       {isRangeMode && !isEditing ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div id="range-date-panel" role="tabpanel" aria-labelledby="range-tab" className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="start_date">Start Date</Label>
             <Input
@@ -117,6 +123,8 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
               min={today}
               required
               disabled={isPending}
+              aria-invalid={!!error}
+              aria-describedby={error ? "form-error" : undefined}
             />
           </div>
           <div className="space-y-2">
@@ -128,6 +136,8 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
               min={today}
               required
               disabled={isPending}
+              aria-invalid={!!error}
+              aria-describedby={error ? "form-error" : undefined}
             />
           </div>
           <p className="col-span-2 text-xs text-muted-foreground">
@@ -135,7 +145,7 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div id="single-date-panel" role="tabpanel" aria-labelledby="single-tab" className="space-y-2">
           <Label htmlFor="date">Date</Label>
           <Input
             id="date"
@@ -145,8 +155,10 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
             min={isEditing ? undefined : today}
             required
             disabled={isPending}
+            aria-invalid={!!error}
+            aria-describedby={error ? "form-error date-hint" : "date-hint"}
           />
-          <p className="text-xs text-muted-foreground">
+          <p id="date-hint" className="text-xs text-muted-foreground">
             The date this availability is for
           </p>
         </div>
@@ -163,8 +175,10 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
           defaultValue={capacityWindow?.total_slots ?? 3}
           required
           disabled={isPending}
+          aria-invalid={!!error}
+          aria-describedby={error ? "form-error slots-hint" : "slots-hint"}
         />
-        <p className="text-xs text-muted-foreground">
+        <p id="slots-hint" className="text-xs text-muted-foreground">
           How many orders can you take{isRangeMode ? " per day" : " on this date"}? Set to 0 to block {isRangeMode ? "dates" : "the date"}.
         </p>
       </div>

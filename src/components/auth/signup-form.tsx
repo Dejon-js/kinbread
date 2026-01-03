@@ -32,7 +32,7 @@ export function SignupForm() {
   return (
     <form action={handleSubmit} className="space-y-4">
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" id="form-error" role="alert" aria-live="polite">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -46,6 +46,8 @@ export function SignupForm() {
           placeholder="you@example.com"
           required
           disabled={isPending}
+          aria-invalid={!!error}
+          aria-describedby={error ? "form-error" : undefined}
         />
       </div>
 
@@ -59,6 +61,8 @@ export function SignupForm() {
           minLength={8}
           required
           disabled={isPending}
+          aria-invalid={!!error}
+          aria-describedby={error ? "form-error" : undefined}
         />
       </div>
 

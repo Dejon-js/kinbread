@@ -45,7 +45,7 @@ export function SubmissionForm({ windowId, slug, date, timezone }: SubmissionFor
   return (
     <form action={handleSubmit} className="space-y-6">
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" id="form-error" role="alert" aria-live="polite">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -63,6 +63,8 @@ export function SubmissionForm({ windowId, slug, date, timezone }: SubmissionFor
           placeholder="Jane Smith"
           required
           disabled={isPending}
+          aria-invalid={!!error}
+          aria-describedby={error ? "form-error" : undefined}
         />
       </div>
 
@@ -75,8 +77,10 @@ export function SubmissionForm({ windowId, slug, date, timezone }: SubmissionFor
           placeholder="jane@example.com"
           required
           disabled={isPending}
+          aria-invalid={!!error}
+          aria-describedby={error ? "form-error customer_email-hint" : "customer_email-hint"}
         />
-        <p className="text-xs text-muted-foreground">
+        <p id="customer_email-hint" className="text-xs text-muted-foreground">
           The baker will contact you here
         </p>
       </div>
@@ -101,8 +105,10 @@ export function SubmissionForm({ windowId, slug, date, timezone }: SubmissionFor
           required
           disabled={isPending}
           rows={4}
+          aria-invalid={!!error}
+          aria-describedby={error ? "form-error description-hint" : "description-hint"}
         />
-        <p className="text-xs text-muted-foreground">
+        <p id="description-hint" className="text-xs text-muted-foreground">
           Include details like size, flavors, event type, and any dietary requirements
         </p>
       </div>
