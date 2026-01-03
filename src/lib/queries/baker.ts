@@ -3,6 +3,20 @@ import type { Baker } from '@/types/database';
 import type { PublicBakerView } from '@/types/views';
 
 /**
+ * Get the current authenticated user's baker profile
+ */
+export async function getCurrentBaker(): Promise<Baker | null> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return null;
+  }
+
+  return getBakerByUserId(user.id);
+}
+
+/**
  * Get baker by their auth user ID
  */
 export async function getBakerByUserId(userId: string): Promise<Baker | null> {

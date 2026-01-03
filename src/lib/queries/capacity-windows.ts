@@ -226,3 +226,27 @@ export async function windowExistsForDate(
 
   return (count || 0) > 0;
 }
+
+/**
+ * Get dates that already have windows in a date range
+ */
+export async function getExistingDatesInRange(
+  bakerId: string,
+  startDate: string,
+  endDate: string
+): Promise<string[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('capacity_windows')
+    .select('date')
+    .eq('baker_id', bakerId)
+    .gte('date', startDate)
+    .lte('date', endDate);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).map((w) => w.date);
+}

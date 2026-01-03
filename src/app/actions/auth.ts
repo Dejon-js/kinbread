@@ -48,10 +48,7 @@ export async function signUp(formData: FormData): Promise<ActionResult<{ userId:
     };
   }
 
-  return {
-    success: true,
-    data: { userId: data.user.id },
-  };
+  redirect('/onboarding');
 }
 
 /**
@@ -89,7 +86,7 @@ export async function signIn(formData: FormData): Promise<ActionResult> {
     };
   }
 
-  return { success: true, data: undefined };
+  redirect('/dashboard');
 }
 
 /**

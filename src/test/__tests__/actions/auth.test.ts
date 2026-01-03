@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { signUp, signIn, signOut, getCurrentUser } from '@/app/actions/auth';
 
+// Mock next/navigation redirect
+const mockRedirect = vi.fn();
+vi.mock('next/navigation', () => ({
+  redirect: (url: string) => {
+    mockRedirect(url);
+    throw new Error('NEXT_REDIRECT');
+  },
+}));
+
 // Mock the Supabase server client
 const mockSupabase = {
   auth: {
@@ -20,7 +29,7 @@ describe('signUp', () => {
     vi.clearAllMocks();
   });
 
-  it('should successfully sign up a user', async () => {
+  it('should successfully sign up a user and redirect to onboarding', async () => {
     const mockUser = { id: 'user-123', email: 'test@example.com' };
     mockSupabase.auth.signUp.mockResolvedValue({
       data: { user: mockUser },
@@ -31,12 +40,8 @@ describe('signUp', () => {
     formData.set('email', 'test@example.com');
     formData.set('password', 'password123');
 
-    const result = await signUp(formData);
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.userId).toBe('user-123');
-    }
+    await expect(signUp(formData)).rejects.toThrow('NEXT_REDIRECT');
+    expect(mockRedirect).toHaveBeenCalledWith('/onboarding');
   });
 
   it('should return validation error for invalid email', async () => {
@@ -90,7 +95,7 @@ describe('signIn', () => {
     vi.clearAllMocks();
   });
 
-  it('should successfully sign in a user', async () => {
+  it('should successfully sign in a user and redirect to dashboard', async () => {
     mockSupabase.auth.signInWithPassword.mockResolvedValue({
       data: { user: { id: 'user-123' } },
       error: null,
@@ -100,9 +105,8 @@ describe('signIn', () => {
     formData.set('email', 'test@example.com');
     formData.set('password', 'password123');
 
-    const result = await signIn(formData);
-
-    expect(result.success).toBe(true);
+    await expect(signIn(formData)).rejects.toThrow('NEXT_REDIRECT');
+    expect(mockRedirect).toHaveBeenCalledWith('/dashboard');
   });
 
   it('should return validation error for empty email', async () => {
@@ -156,12 +160,12 @@ describe('signOut', () => {
     vi.clearAllMocks();
   });
 
-  it('should call Supabase signOut', async () => {
+  it('should call Supabase signOut and redirect to home', async () => {
     mockSupabase.auth.signOut.mockResolvedValue({ error: null });
 
-    // Call signOut - redirect is mocked so it won't actually throw
-    await signOut();
+    await expect(signOut()).rejects.toThrow('NEXT_REDIRECT');
     expect(mockSupabase.auth.signOut).toHaveBeenCalled();
+    expect(mockRedirect).toHaveBeenCalledWith('/');
   });
 });
 

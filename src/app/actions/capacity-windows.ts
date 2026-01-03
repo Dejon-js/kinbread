@@ -1,9 +1,9 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { capacityWindowSchema, updateCapacityWindowSchema } from '@/lib/validations/capacity-window';
+import { capacityWindowSchema, updateCapacityWindowSchema, dateRangeWindowSchema } from '@/lib/validations/capacity-window';
 import { getBakerByUserId } from '@/lib/queries/baker';
-import { windowExistsForDate, windowHasSubmissions } from '@/lib/queries/capacity-windows';
+import { windowExistsForDate, windowHasSubmissions, getExistingDatesInRange } from '@/lib/queries/capacity-windows';
 import type { ActionResult } from '@/types/actions';
 import type { CapacityWindow } from '@/types/database';
 import { revalidatePath } from 'next/cache';
@@ -88,6 +88,107 @@ export async function createCapacityWindow(formData: FormData): Promise<ActionRe
   return {
     success: true,
     data: window,
+  };
+}
+
+/**
+ * Create capacity windows for a date range
+ */
+export async function createCapacityWindowsForRange(formData: FormData): Promise<ActionResult<{ created: number; skipped: number }>> {
+  const supabase = await createClient();
+
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return {
+      success: false,
+      error: 'Not authenticated',
+      code: 'UNAUTHENTICATED',
+    };
+  }
+
+  // Get baker profile
+  const baker = await getBakerByUserId(user.id);
+  if (!baker) {
+    return {
+      success: false,
+      error: 'Baker profile not found',
+      code: 'PROFILE_NOT_FOUND',
+    };
+  }
+
+  // Parse and validate input
+  const rawData = {
+    start_date: formData.get('start_date'),
+    end_date: formData.get('end_date'),
+    total_slots: Number(formData.get('total_slots')),
+    note: formData.get('note') || null,
+  };
+
+  const parsed = dateRangeWindowSchema.safeParse(rawData);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid input',
+      code: 'VALIDATION_ERROR',
+    };
+  }
+
+  const { start_date, end_date, total_slots, note } = parsed.data;
+
+  // Get existing dates in range to skip
+  const existingDates = await getExistingDatesInRange(baker.id, start_date, end_date);
+  const existingDatesSet = new Set(existingDates);
+
+  // Generate all dates in range
+  const datesToCreate: string[] = [];
+  const startDateObj = new Date(start_date);
+  const endDateObj = new Date(end_date);
+
+  for (let d = new Date(startDateObj); d <= endDateObj; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0];
+    if (!existingDatesSet.has(dateStr)) {
+      datesToCreate.push(dateStr);
+    }
+  }
+
+  if (datesToCreate.length === 0) {
+    return {
+      success: false,
+      error: 'All dates in the selected range already have capacity windows',
+      code: 'ALL_DATES_EXIST',
+    };
+  }
+
+  // Bulk insert windows
+  const windowsToInsert = datesToCreate.map(date => ({
+    baker_id: baker.id,
+    date,
+    total_slots,
+    note,
+  }));
+
+  const { error } = await supabase
+    .from('capacity_windows')
+    .insert(windowsToInsert);
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+      code: error.code,
+    };
+  }
+
+  revalidatePath('/dashboard');
+  revalidatePath(`/${baker.slug}`);
+
+  return {
+    success: true,
+    data: {
+      created: datesToCreate.length,
+      skipped: existingDates.length,
+    },
   };
 }
 

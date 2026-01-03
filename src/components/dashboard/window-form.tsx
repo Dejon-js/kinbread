@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createCapacityWindow, updateCapacityWindow } from "@/app/actions/capacity-windows";
+import { useRouter } from "next/navigation";
+import { createCapacityWindow, updateCapacityWindow, createCapacityWindowsForRange } from "@/app/actions/capacity-windows";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,20 +15,39 @@ interface WindowFormProps {
 }
 
 export function WindowForm({ capacityWindow }: WindowFormProps) {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [isRangeMode, setIsRangeMode] = useState(false);
 
   const isEditing = !!capacityWindow;
 
   async function handleSubmit(formData: FormData) {
     setError(null);
+    setSuccess(null);
     setIsPending(true);
 
     try {
       if (isEditing && capacityWindow) {
-        const result = await updateCapacityWindow(capacityWindow.id, formData);
+        formData.set('id', capacityWindow.id);
+        const result = await updateCapacityWindow(formData);
         if (!result.success) {
           setError(result.error);
+        }
+      } else if (isRangeMode) {
+        const result = await createCapacityWindowsForRange(formData);
+        if (!result.success) {
+          setError(result.error);
+        } else {
+          const { created, skipped } = result.data;
+          if (skipped > 0) {
+            setSuccess(`Created ${created} dates. ${skipped} dates were skipped (already exist).`);
+          } else {
+            setSuccess(`Created ${created} dates successfully!`);
+          }
+          // Redirect after a brief delay to show success message
+          setTimeout(() => router.push("/dashboard"), 1500);
         }
       } else {
         const result = await createCapacityWindow(formData);
@@ -53,21 +73,84 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="date">Date</Label>
-        <Input
-          id="date"
-          name="date"
-          type="date"
-          defaultValue={capacityWindow?.date}
-          min={isEditing ? undefined : today}
-          required
-          disabled={isPending}
-        />
-        <p className="text-xs text-muted-foreground">
-          The date this availability is for
-        </p>
-      </div>
+      {success && (
+        <Alert>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+
+      {!isEditing && (
+        <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
+          <button
+            type="button"
+            onClick={() => setIsRangeMode(false)}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              !isRangeMode
+                ? "bg-background shadow-sm font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Single Date
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsRangeMode(true)}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+              isRangeMode
+                ? "bg-background shadow-sm font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Date Range
+          </button>
+        </div>
+      )}
+
+      {isRangeMode && !isEditing ? (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="start_date">Start Date</Label>
+            <Input
+              id="start_date"
+              name="start_date"
+              type="date"
+              min={today}
+              required
+              disabled={isPending}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="end_date">End Date</Label>
+            <Input
+              id="end_date"
+              name="end_date"
+              type="date"
+              min={today}
+              required
+              disabled={isPending}
+            />
+          </div>
+          <p className="col-span-2 text-xs text-muted-foreground">
+            Create availability for all dates in this range. Existing dates will be skipped.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="date">Date</Label>
+          <Input
+            id="date"
+            name="date"
+            type="date"
+            defaultValue={capacityWindow?.date}
+            min={isEditing ? undefined : today}
+            required
+            disabled={isPending}
+          />
+          <p className="text-xs text-muted-foreground">
+            The date this availability is for
+          </p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="total_slots">Number of Slots</Label>
@@ -82,7 +165,7 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
           disabled={isPending}
         />
         <p className="text-xs text-muted-foreground">
-          How many orders can you take on this date? Set to 0 to block the date.
+          How many orders can you take{isRangeMode ? " per day" : " on this date"}? Set to 0 to block {isRangeMode ? "dates" : "the date"}.
         </p>
       </div>
 
@@ -102,13 +185,17 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
       </div>
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending || !!success}>
           {isPending
             ? isEditing
               ? "Saving..."
+              : isRangeMode
+              ? "Creating..."
               : "Adding..."
             : isEditing
             ? "Save Changes"
+            : isRangeMode
+            ? "Create Dates"
             : "Add Date"}
         </Button>
         <Button type="button" variant="outline" onClick={() => window.history.back()}>
