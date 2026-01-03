@@ -13,7 +13,7 @@ interface EditWindowPageProps {
 
 export async function generateMetadata({ params }: EditWindowPageProps) {
   return {
-    title: "Edit Date - Capacity Gate",
+    title: "Edit Date - Kinbread",
     description: "Edit availability date",
   };
 }

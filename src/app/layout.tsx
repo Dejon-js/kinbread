@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Capacity Gate - Manage Your Bakery Bookings",
+  title: "Kinbread - Manage Your Bakery Bookings",
   description: "Simple capacity management for cottage bakers. Set your limits, share your link, and let the system say no for you.",
 };
 

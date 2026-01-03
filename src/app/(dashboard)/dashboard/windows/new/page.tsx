@@ -4,7 +4,7 @@ import { WindowForm } from "@/components/dashboard/window-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = {
-  title: "Add Date - Capacity Gate",
+  title: "Add Date - Kinbread",
   description: "Add a new availability date",
 };
 

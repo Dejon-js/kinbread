@@ -10,7 +10,7 @@ interface WindowPageProps {
 export async function generateMetadata({ params }: WindowPageProps) {
   const { id } = await params;
   return {
-    title: `Date Details - Capacity Gate`,
+    title: `Date Details - Kinbread`,
     description: "View and manage date capacity",
   };
 }

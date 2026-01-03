@@ -3,15 +3,15 @@ import { LoginForm } from "@/components/auth/login-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = {
-  title: "Sign In - Capacity Gate",
-  description: "Sign in to your Capacity Gate account",
+  title: "Sign In - Kinbread",
+  description: "Sign in to your Kinbread account",
 };
 
 export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted/30">
       <Link href="/" className="text-2xl font-bold mb-8">
-        Capacity Gate
+        Kinbread
       </Link>
 
       <Card className="w-full max-w-md">

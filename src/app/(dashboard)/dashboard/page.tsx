@@ -6,7 +6,7 @@ import { getCurrentBaker } from "@/lib/queries/baker";
 import { getWindowsForBaker } from "@/lib/queries/capacity-windows";
 
 export const metadata = {
-  title: "Dashboard - Capacity Gate",
+  title: "Dashboard - Kinbread",
   description: "Manage your bakery capacity",
 };
 

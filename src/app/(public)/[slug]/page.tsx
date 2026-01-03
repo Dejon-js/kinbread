@@ -61,7 +61,7 @@ export default async function PublicAvailabilityPage({ params }: PublicPageProps
         </Card>
 
         <p className="text-xs text-center text-muted-foreground mt-4">
-          Powered by Capacity Gate
+          Powered by Kinbread
         </p>
       </div>
     </div>

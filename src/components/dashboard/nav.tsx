@@ -67,7 +67,7 @@ export function DashboardNav({ baker }: DashboardNavProps) {
       >
         <div className="p-4 border-b">
           <Link href="/dashboard" className="text-lg font-bold" onClick={closeMenu}>
-            Capacity Gate
+            Kinbread
           </Link>
           <p className="text-sm text-muted-foreground truncate mt-1">
             {baker.business_name}

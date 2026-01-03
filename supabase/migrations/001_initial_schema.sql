@@ -1,4 +1,4 @@
--- Capacity Gate MVP - Initial Schema
+-- Kinbread MVP - Initial Schema
 -- This migration creates all tables, indexes, RLS policies, functions, and triggers
 
 -- ============================================================================

@@ -3,7 +3,7 @@ import { getCurrentBaker } from "@/lib/queries/baker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata = {
-  title: "Settings - Capacity Gate",
+  title: "Settings - Kinbread",
   description: "Manage your bakery settings",
 };
 

@@ -8,7 +8,7 @@ export default function HomePage() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold">
-            Capacity Gate
+            Kinbread
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/login">
@@ -220,7 +220,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Capacity Gate. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Kinbread. All rights reserved.</p>
         </div>
       </footer>
     </div>
