@@ -1,6 +1,0 @@
-/**
- * Utility exports
- */
-
-export * from './dates';
-export * from './slugify';
