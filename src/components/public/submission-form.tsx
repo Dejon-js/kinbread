@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createSubmission } from "@/app/actions/submissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ interface SubmissionFormProps {
 }
 
 export function SubmissionForm({ windowId, slug, date, timezone }: SubmissionFormProps) {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
@@ -31,9 +33,12 @@ export function SubmissionForm({ windowId, slug, date, timezone }: SubmissionFor
     setIsPending(true);
 
     try {
-      const result = await createSubmission(windowId, slug, formData);
+      formData.set("capacity_window_id", windowId);
+      const result = await createSubmission(formData);
       if (!result.success) {
-        setError(result.error);
+        setError(result.error || "Failed to submit request");
+      } else {
+        router.push(`/${slug}/confirmation`);
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");

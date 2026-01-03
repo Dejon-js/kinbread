@@ -159,6 +159,56 @@ export async function getPublicWindowsForBaker(bakerId: string): Promise<PublicW
 }
 
 /**
+ * Get a capacity window for the public booking page
+ * Returns the window and whether it's available for booking
+ */
+export async function getWindowForBooking(
+  windowId: string,
+  bakerId: string
+): Promise<{ window: CapacityWindow; available: boolean } | null> {
+  const supabase = await createClient();
+
+  // Get the window
+  const { data: window, error: windowError } = await supabase
+    .from('capacity_windows')
+    .select('*')
+    .eq('id', windowId)
+    .eq('baker_id', bakerId)
+    .single();
+
+  if (windowError) {
+    if (windowError.code === 'PGRST116') {
+      return null;
+    }
+    throw windowError;
+  }
+
+  // Check if date is in the past
+  const today = new Date().toISOString().split('T')[0];
+  if (window.date < today) {
+    return { window, available: false };
+  }
+
+  // Get submission count for this window
+  const { data: submissions, error: submissionsError } = await supabase
+    .from('submissions')
+    .select('slots_consumed')
+    .eq('capacity_window_id', windowId);
+
+  if (submissionsError) {
+    throw submissionsError;
+  }
+
+  const usedSlots = (submissions || []).reduce((sum, s) => sum + s.slots_consumed, 0);
+  const availableSlots = Math.max(0, window.total_slots - usedSlots);
+
+  return {
+    window,
+    available: availableSlots > 0,
+  };
+}
+
+/**
  * Get a single capacity window by ID
  */
 export async function getWindowById(windowId: string): Promise<CapacityWindow | null> {
