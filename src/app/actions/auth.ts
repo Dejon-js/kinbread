@@ -1,62 +1,121 @@
-"use server";
+'use server';
 
-import { redirect } from "next/navigation";
-import { signUpSchema, signInSchema } from "@/lib/validations";
-import type { AuthActionResult } from "@/types";
+import { createClient } from '@/lib/supabase/server';
+import { signUpSchema, signInSchema } from '@/lib/validations/auth';
+import type { ActionResult } from '@/types/actions';
+import { redirect } from 'next/navigation';
 
-export async function signUp(formData: FormData): Promise<AuthActionResult> {
-  const rawFormData = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
+/**
+ * Sign up a new user with email and password
+ */
+export async function signUp(formData: FormData): Promise<ActionResult<{ userId: string }>> {
+  const rawData = {
+    email: formData.get('email'),
+    password: formData.get('password'),
   };
 
-  const validatedFields = signUpSchema.safeParse(rawFormData);
-
-  if (!validatedFields.success) {
+  // Validate input
+  const parsed = signUpSchema.safeParse(rawData);
+  if (!parsed.success) {
     return {
       success: false,
-      error: validatedFields.error.issues[0]?.message || "Invalid input",
+      error: parsed.error.issues[0]?.message || 'Invalid input',
+      code: 'VALIDATION_ERROR',
     };
   }
 
-  // TODO: Replace with actual Supabase auth
-  // For now, simulate success and redirect to onboarding
+  const { email, password } = parsed.data;
+  const supabase = await createClient();
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
 
-  redirect("/onboarding");
-}
-
-export async function signIn(formData: FormData): Promise<AuthActionResult> {
-  const rawFormData = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
-
-  const validatedFields = signInSchema.safeParse(rawFormData);
-
-  if (!validatedFields.success) {
+  if (error) {
     return {
       success: false,
-      error: validatedFields.error.issues[0]?.message || "Invalid input",
+      error: error.message,
+      code: error.code,
     };
   }
 
-  // TODO: Replace with actual Supabase auth
-  // For now, simulate success and redirect to dashboard
+  if (!data.user) {
+    return {
+      success: false,
+      error: 'Failed to create user',
+      code: 'USER_CREATION_FAILED',
+    };
+  }
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  redirect("/dashboard");
+  return {
+    success: true,
+    data: { userId: data.user.id },
+  };
 }
 
-export async function signOut(): Promise<void> {
-  // TODO: Replace with actual Supabase auth
+/**
+ * Sign in an existing user with email and password
+ */
+export async function signIn(formData: FormData): Promise<ActionResult> {
+  const rawData = {
+    email: formData.get('email'),
+    password: formData.get('password'),
+  };
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  // Validate input
+  const parsed = signInSchema.safeParse(rawData);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || 'Invalid input',
+      code: 'VALIDATION_ERROR',
+    };
+  }
 
-  redirect("/");
+  const { email, password } = parsed.data;
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+      code: error.code,
+    };
+  }
+
+  return { success: true, data: undefined };
+}
+
+/**
+ * Sign out the current user
+ */
+export async function signOut(): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+      code: error.code,
+    };
+  }
+
+  redirect('/');
+}
+
+/**
+ * Get the current authenticated user
+ */
+export async function getCurrentUser() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
 }

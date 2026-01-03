@@ -11,7 +11,13 @@ export const capacityWindowSchema = z.object({
     .string()
     .max(200, "Note must be 200 characters or less")
     .optional()
-    .nullable(),
+    .nullable()
+    .transform((val) => (val === "" ? null : val)),
+});
+
+export const updateCapacityWindowSchema = capacityWindowSchema.extend({
+  id: z.string().uuid("Invalid window ID"),
 });
 
 export type CapacityWindowInput = z.infer<typeof capacityWindowSchema>;
+export type UpdateCapacityWindowInput = z.infer<typeof updateCapacityWindowSchema>;

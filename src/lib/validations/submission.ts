@@ -13,7 +13,8 @@ export const submissionSchema = z.object({
     .string()
     .max(20, "Phone must be 20 characters or less")
     .optional()
-    .nullable(),
+    .nullable()
+    .transform((val) => (val === "" ? null : val)),
   description: z
     .string()
     .min(1, "Description is required")
@@ -28,7 +29,13 @@ export const submissionSchema = z.object({
     .string()
     .max(50, "Budget range must be 50 characters or less")
     .optional()
-    .nullable(),
+    .nullable()
+    .transform((val) => (val === "" ? null : val)),
+});
+
+export const createSubmissionSchema = submissionSchema.extend({
+  capacity_window_id: z.string().uuid("Invalid capacity window ID"),
 });
 
 export type SubmissionInput = z.infer<typeof submissionSchema>;
+export type CreateSubmissionInput = z.infer<typeof createSubmissionSchema>;

@@ -1,127 +1,228 @@
-import { mockCapacityWindows, mockSubmissions } from "@/lib/mock-data";
-import { getTodayString } from "@/lib/utils/dates";
-import type { CapacityWindow, WindowWithStats, WindowWithSubmissions, PublicWindowView } from "@/types";
+import { createClient } from '@/lib/supabase/server';
+import type { CapacityWindow } from '@/types/database';
+import type { WindowWithStats, WindowWithSubmissions, PublicWindowView } from '@/types/views';
 
+/**
+ * Get all capacity windows for a baker with slot statistics
+ * Sorted by date ascending
+ */
 export async function getWindowsForBaker(bakerId: string): Promise<WindowWithStats[]> {
-  // TODO: Replace with actual Supabase query
-  // For now, return mock data with computed stats
+  const supabase = await createClient();
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // Get windows with submission counts
+  const { data: windows, error: windowsError } = await supabase
+    .from('capacity_windows')
+    .select('*')
+    .eq('baker_id', bakerId)
+    .order('date', { ascending: true });
 
-  const windows = mockCapacityWindows.filter((w) => w.baker_id === bakerId);
+  if (windowsError) {
+    throw windowsError;
+  }
 
+  if (!windows || windows.length === 0) {
+    return [];
+  }
+
+  // Get submission counts per window
+  const { data: submissions, error: submissionsError } = await supabase
+    .from('submissions')
+    .select('capacity_window_id, slots_consumed')
+    .eq('baker_id', bakerId);
+
+  if (submissionsError) {
+    throw submissionsError;
+  }
+
+  // Calculate used slots per window
+  const usedSlotsMap = new Map<string, number>();
+  for (const submission of submissions || []) {
+    const current = usedSlotsMap.get(submission.capacity_window_id) || 0;
+    usedSlotsMap.set(submission.capacity_window_id, current + submission.slots_consumed);
+  }
+
+  // Build windows with stats
   return windows.map((window) => {
-    const submissions = mockSubmissions.filter(
-      (s) => s.capacity_window_id === window.id
-    );
-    const usedSlots = submissions.reduce((sum, s) => sum + s.slots_consumed, 0);
-
+    const used_slots = usedSlotsMap.get(window.id) || 0;
     return {
       ...window,
-      used_slots: usedSlots,
-      available_slots: window.total_slots - usedSlots,
+      used_slots,
+      available_slots: Math.max(0, window.total_slots - used_slots),
     };
-  }).sort((a, b) => a.date.localeCompare(b.date));
+  });
 }
 
+/**
+ * Get a single capacity window with its submissions and stats
+ */
 export async function getWindowWithSubmissions(
   windowId: string,
   bakerId: string
 ): Promise<WindowWithSubmissions | null> {
-  // TODO: Replace with actual Supabase query
-  // For now, return mock data
+  const supabase = await createClient();
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // Get the window
+  const { data: window, error: windowError } = await supabase
+    .from('capacity_windows')
+    .select('*')
+    .eq('id', windowId)
+    .eq('baker_id', bakerId)
+    .single();
 
-  const window = mockCapacityWindows.find(
-    (w) => w.id === windowId && w.baker_id === bakerId
+  if (windowError) {
+    if (windowError.code === 'PGRST116') {
+      return null;
+    }
+    throw windowError;
+  }
+
+  // Get submissions for this window
+  const { data: submissions, error: submissionsError } = await supabase
+    .from('submissions')
+    .select('*')
+    .eq('capacity_window_id', windowId)
+    .order('submitted_at', { ascending: false });
+
+  if (submissionsError) {
+    throw submissionsError;
+  }
+
+  // Calculate used slots
+  const used_slots = (submissions || []).reduce(
+    (sum, s) => sum + s.slots_consumed,
+    0
   );
-
-  if (!window) return null;
-
-  const submissions = mockSubmissions.filter(
-    (s) => s.capacity_window_id === windowId
-  );
-  const usedSlots = submissions.reduce((sum, s) => sum + s.slots_consumed, 0);
 
   return {
     ...window,
-    used_slots: usedSlots,
-    available_slots: window.total_slots - usedSlots,
-    submissions: submissions.sort(
-      (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
-    ),
+    used_slots,
+    available_slots: Math.max(0, window.total_slots - used_slots),
+    submissions: submissions || [],
   };
 }
 
-export async function getPublicWindowsForBaker(
-  bakerId: string,
-  timezone: string = "America/New_York"
-): Promise<PublicWindowView[]> {
-  // TODO: Replace with actual Supabase query
-  // For now, return mock data filtered to future dates only
+/**
+ * Get public-facing windows for a baker (for availability page)
+ * Only includes dates >= today
+ */
+export async function getPublicWindowsForBaker(bakerId: string): Promise<PublicWindowView[]> {
+  const supabase = await createClient();
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // Get today's date in ISO format
+  const today = new Date().toISOString().split('T')[0];
 
-  const today = getTodayString(timezone);
-  const windows = mockCapacityWindows.filter(
-    (w) => w.baker_id === bakerId && w.date >= today
-  );
+  // Get windows
+  const { data: windows, error: windowsError } = await supabase
+    .from('capacity_windows')
+    .select('id, date, total_slots')
+    .eq('baker_id', bakerId)
+    .gte('date', today)
+    .order('date', { ascending: true });
 
-  return windows
-    .map((window) => {
-      const submissions = mockSubmissions.filter(
-        (s) => s.capacity_window_id === window.id
-      );
-      const usedSlots = submissions.reduce((sum, s) => sum + s.slots_consumed, 0);
-      const availableSlots = window.total_slots - usedSlots;
+  if (windowsError) {
+    throw windowsError;
+  }
 
-      return {
-        id: window.id,
-        date: window.date,
-        available_slots: availableSlots,
-        is_available: availableSlots > 0,
-      };
-    })
-    .sort((a, b) => a.date.localeCompare(b.date));
+  if (!windows || windows.length === 0) {
+    return [];
+  }
+
+  // Get submission counts
+  const windowIds = windows.map((w) => w.id);
+  const { data: submissions, error: submissionsError } = await supabase
+    .from('submissions')
+    .select('capacity_window_id, slots_consumed')
+    .in('capacity_window_id', windowIds);
+
+  if (submissionsError) {
+    throw submissionsError;
+  }
+
+  // Calculate used slots per window
+  const usedSlotsMap = new Map<string, number>();
+  for (const submission of submissions || []) {
+    const current = usedSlotsMap.get(submission.capacity_window_id) || 0;
+    usedSlotsMap.set(submission.capacity_window_id, current + submission.slots_consumed);
+  }
+
+  // Build public view
+  return windows.map((window) => {
+    const used_slots = usedSlotsMap.get(window.id) || 0;
+    const available_slots = Math.max(0, window.total_slots - used_slots);
+    return {
+      id: window.id,
+      date: window.date,
+      available_slots,
+      is_available: available_slots > 0,
+    };
+  });
 }
 
+/**
+ * Get a single capacity window by ID
+ */
 export async function getWindowById(windowId: string): Promise<CapacityWindow | null> {
-  // TODO: Replace with actual Supabase query
-  // For now, return mock data
+  const supabase = await createClient();
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  const { data, error } = await supabase
+    .from('capacity_windows')
+    .select('*')
+    .eq('id', windowId)
+    .single();
 
-  return mockCapacityWindows.find((w) => w.id === windowId) || null;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    throw error;
+  }
+
+  return data;
 }
 
-export async function getWindowForBooking(
-  windowId: string,
-  bakerId: string
-): Promise<{ window: CapacityWindow; available: boolean } | null> {
-  // TODO: Replace with actual Supabase query
-  // For now, return mock data
+/**
+ * Check if a window has any submissions
+ */
+export async function windowHasSubmissions(windowId: string): Promise<boolean> {
+  const supabase = await createClient();
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  const { count, error } = await supabase
+    .from('submissions')
+    .select('*', { count: 'exact', head: true })
+    .eq('capacity_window_id', windowId);
 
-  const window = mockCapacityWindows.find(
-    (w) => w.id === windowId && w.baker_id === bakerId
-  );
+  if (error) {
+    throw error;
+  }
 
-  if (!window) return null;
+  return (count || 0) > 0;
+}
 
-  const submissions = mockSubmissions.filter(
-    (s) => s.capacity_window_id === windowId
-  );
-  const usedSlots = submissions.reduce((sum, s) => sum + s.slots_consumed, 0);
+/**
+ * Check if baker already has a window for the given date
+ */
+export async function windowExistsForDate(
+  bakerId: string,
+  date: string,
+  excludeWindowId?: string
+): Promise<boolean> {
+  const supabase = await createClient();
 
-  return {
-    window,
-    available: usedSlots < window.total_slots,
-  };
+  let query = supabase
+    .from('capacity_windows')
+    .select('*', { count: 'exact', head: true })
+    .eq('baker_id', bakerId)
+    .eq('date', date);
+
+  if (excludeWindowId) {
+    query = query.neq('id', excludeWindowId);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return (count || 0) > 0;
 }

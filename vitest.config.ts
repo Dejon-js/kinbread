@@ -7,8 +7,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./src/test/setup.tsx'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: ['./src/test/setup.tsx', './vitest.setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', '**/*.test.ts', '**/*.test.tsx'],
+    exclude: ['node_modules', '.next'],
     coverage: {
       reporter: ['text', 'json', 'html'],
       exclude: [

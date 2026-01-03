@@ -27,7 +27,8 @@ export const settingsSchema = z.object({
     .string()
     .max(500, "Context message must be 500 characters or less")
     .optional()
-    .nullable(),
+    .nullable()
+    .transform((val) => (val === "" ? null : val)),
   timezone: z.string().min(1, "Timezone is required"),
 });
 

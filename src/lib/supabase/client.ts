@@ -1,7 +1,8 @@
-"use client";
+import { createBrowserClient } from '@supabase/ssr';
 
-import { createBrowserClient } from "@supabase/ssr";
-
+/**
+ * Creates a Supabase client for browser/client-side usage
+ */
 export function createClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

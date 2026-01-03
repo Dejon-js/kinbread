@@ -1,46 +1,89 @@
-import { mockBaker } from "@/lib/mock-data";
-import type { Baker, PublicBakerView } from "@/types";
+import { createClient } from '@/lib/supabase/server';
+import type { Baker } from '@/types/database';
+import type { PublicBakerView } from '@/types/views';
 
+/**
+ * Get baker by their auth user ID
+ */
 export async function getBakerByUserId(userId: string): Promise<Baker | null> {
-  // TODO: Replace with actual Supabase query
-  // For now, return mock data
+  const supabase = await createClient();
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  const { data, error } = await supabase
+    .from('bakers')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
 
-  if (userId === "user-1") {
-    return mockBaker;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No rows returned
+      return null;
+    }
+    throw error;
   }
 
-  return null;
+  return data;
 }
 
+/**
+ * Get baker by their public slug (for public availability page)
+ * Only returns public-safe fields
+ */
 export async function getBakerBySlug(slug: string): Promise<PublicBakerView | null> {
-  // TODO: Replace with actual Supabase query
-  // For now, return mock data
+  const supabase = await createClient();
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  const { data, error } = await supabase
+    .from('bakers')
+    .select('id, business_name, slug, context_message, timezone')
+    .eq('slug', slug)
+    .single();
 
-  if (slug === "sweet-delights") {
-    return {
-      id: mockBaker.id,
-      business_name: mockBaker.business_name,
-      slug: mockBaker.slug,
-      context_message: mockBaker.context_message,
-      timezone: mockBaker.timezone,
-    };
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    throw error;
   }
 
-  return null;
+  return data;
 }
 
-export async function getCurrentBaker(): Promise<Baker | null> {
-  // TODO: Replace with actual auth check and Supabase query
-  // For now, return mock data (simulating logged in user)
+/**
+ * Check if a slug is available
+ */
+export async function isSlugAvailable(slug: string): Promise<boolean> {
+  const supabase = await createClient();
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  const { count, error } = await supabase
+    .from('bakers')
+    .select('*', { count: 'exact', head: true })
+    .eq('slug', slug);
 
-  return mockBaker;
+  if (error) {
+    throw error;
+  }
+
+  return count === 0;
+}
+
+/**
+ * Get baker by ID
+ */
+export async function getBakerById(bakerId: string): Promise<Baker | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('bakers')
+    .select('*')
+    .eq('id', bakerId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    throw error;
+  }
+
+  return data;
 }
