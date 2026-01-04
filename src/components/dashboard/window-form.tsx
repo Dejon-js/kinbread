@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { SingleDatePicker } from "@/components/ui/single-date-picker";
 import type { CapacityWindow } from "@/types";
 
 interface WindowFormProps {
@@ -24,6 +25,9 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [isRangeMode, setIsRangeMode] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [singleDate, setSingleDate] = useState<Date | undefined>(
+    capacityWindow?.date ? new Date(capacityWindow.date + "T00:00:00") : undefined
+  );
 
   const isEditing = !!capacityWindow;
   const today = new Date();
@@ -67,9 +71,6 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
       setIsPending(false);
     }
   }
-
-  // Format today as YYYY-MM-DD for the single date input's min attribute
-  const todayString = format(today, "yyyy-MM-dd");
 
   return (
     <form action={handleSubmit} className="space-y-6">
@@ -145,17 +146,18 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
         </div>
       ) : (
         <div id="single-date-panel" role="tabpanel" aria-labelledby="single-tab" className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <Input
-            id="date"
-            name="date"
-            type="date"
-            defaultValue={capacityWindow?.date}
-            min={isEditing ? undefined : todayString}
-            required
+          <Label>Date</Label>
+          <SingleDatePicker
+            value={singleDate}
+            onChange={setSingleDate}
+            minDate={isEditing ? undefined : today}
             disabled={isPending}
-            aria-invalid={!!error}
-            aria-describedby={error ? "form-error date-hint" : "date-hint"}
+            placeholder="Click to select date"
+          />
+          <input
+            type="hidden"
+            name="date"
+            value={singleDate ? format(singleDate, "yyyy-MM-dd") : ""}
           />
           <p id="date-hint" className="text-xs text-muted-foreground">
             The date this availability is for
