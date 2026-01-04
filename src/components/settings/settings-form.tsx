@@ -107,7 +107,7 @@ export function SettingsForm({ baker }: SettingsFormProps) {
       <div className="space-y-2">
         <Label>Your Public Link</Label>
         <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
-          <span className="text-sm text-muted-foreground">capacitygate.com/</span>
+          <span className="text-sm text-muted-foreground">kinbread.com/</span>
           <span className="text-sm font-mono">{baker.slug}</span>
         </div>
         <p className="text-xs text-muted-foreground">
