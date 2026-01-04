@@ -97,7 +97,7 @@ export function OnboardingForm() {
         <Label htmlFor="slug">Your Link</Label>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">
-            capacitygate.com/
+            kinbread.com/
           </span>
           <div className="relative flex-1">
             <Input

@@ -20,6 +20,7 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [isRangeMode, setIsRangeMode] = useState(false);
+  const [startDate, setStartDate] = useState("");
 
   const isEditing = !!capacityWindow;
 
@@ -125,6 +126,7 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
               disabled={isPending}
               aria-invalid={!!error}
               aria-describedby={error ? "form-error" : undefined}
+              onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -133,7 +135,7 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
               id="end_date"
               name="end_date"
               type="date"
-              min={today}
+              min={startDate || today}
               required
               disabled={isPending}
               aria-invalid={!!error}

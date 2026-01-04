@@ -5,6 +5,7 @@ import { Trash2, Mail, Phone, MessageSquare, Package, DollarSign } from "lucide-
 import { deleteSubmission } from "@/app/actions/submissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -25,14 +26,21 @@ interface SubmissionCardProps {
 export function SubmissionCard({ submission, timezone }: SubmissionCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   async function handleDelete() {
     setIsDeleting(true);
+    setDeleteError(null);
     try {
-      await deleteSubmission(submission.id);
-      setIsDialogOpen(false);
+      const result = await deleteSubmission(submission.id);
+      if (!result.success) {
+        setDeleteError(result.error || "Failed to delete submission");
+      } else {
+        setIsDialogOpen(false);
+      }
     } catch (error) {
       console.error("Failed to delete submission:", error);
+      setDeleteError("An unexpected error occurred");
     } finally {
       setIsDeleting(false);
     }
@@ -108,6 +116,11 @@ export function SubmissionCard({ submission, timezone }: SubmissionCardProps) {
                   This will free up one slot and cannot be undone.
                 </DialogDescription>
               </DialogHeader>
+              {deleteError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{deleteError}</AlertDescription>
+                </Alert>
+              )}
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isDeleting}>
                   Cancel

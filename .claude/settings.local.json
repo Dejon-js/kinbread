@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(git -C \"C:\\\\Users\\\\Dejon\\\\Documents\\\\kinbread\" log --oneline -20)",
+      "Bash(git -C \"C:\\\\Users\\\\Dejon\\\\Documents\\\\kinbread\" status)",
+      "Bash(git -C \"C:\\\\Users\\\\Dejon\\\\Documents\\\\kinbread\" log --oneline -5)",
+      "Bash(git -C \"C:\\\\Users\\\\Dejon\\\\Documents\\\\kinbread\" add CLAUDE.md)",
+      "Bash(git -C \"C:\\\\Users\\\\Dejon\\\\Documents\\\\kinbread\" commit -m \"$\\(cat <<''EOF''\nAdd CLAUDE.md for Claude Code guidance\n\n🤖 Generated with [Claude Code]\\(https://claude.ai/code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C \"C:\\\\Users\\\\Dejon\\\\Documents\\\\kinbread\" push)",
+      "Bash(npm run test:run:*)",
+      "Bash(git -C \"C:\\\\Users\\\\Dejon\\\\Documents\\\\kinbread\" diff src/test/__tests__/actions/auth.test.ts)"
+    ]
+  }
+}

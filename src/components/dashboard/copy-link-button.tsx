@@ -26,18 +26,24 @@ export function CopyLinkButton({ slug }: CopyLinkButtonProps) {
   }
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleCopy}
-      className="w-full justify-between text-xs font-mono"
-    >
-      <span className="truncate">/{slug}</span>
-      {copied ? (
-        <Check className="h-3 w-3 ml-2 text-green-600" />
-      ) : (
-        <Copy className="h-3 w-3 ml-2" />
-      )}
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleCopy}
+        className="w-full justify-between text-xs font-mono"
+        aria-label={copied ? "Link copied to clipboard" : `Copy link /${slug} to clipboard`}
+      >
+        <span className="truncate">/{slug}</span>
+        {copied ? (
+          <Check className="h-3 w-3 ml-2 text-green-600" aria-hidden="true" />
+        ) : (
+          <Copy className="h-3 w-3 ml-2" aria-hidden="true" />
+        )}
+      </Button>
+      <div role="status" aria-live="polite" className="sr-only">
+        {copied && "Link copied to clipboard"}
+      </div>
+    </>
   );
 }

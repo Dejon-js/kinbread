@@ -88,6 +88,25 @@ describe('signUp', () => {
       expect(result.error).toBe('Email already registered');
     }
   });
+
+  it('should return error when user creation fails silently', async () => {
+    mockSupabase.auth.signUp.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+
+    const formData = new FormData();
+    formData.set('email', 'test@example.com');
+    formData.set('password', 'password123');
+
+    const result = await signUp(formData);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe('Failed to create user');
+      expect(result.code).toBe('USER_CREATION_FAILED');
+    }
+  });
 });
 
 describe('signIn', () => {
@@ -166,6 +185,20 @@ describe('signOut', () => {
     await expect(signOut()).rejects.toThrow('NEXT_REDIRECT');
     expect(mockSupabase.auth.signOut).toHaveBeenCalled();
     expect(mockRedirect).toHaveBeenCalledWith('/');
+  });
+
+  it('should return error when signOut fails', async () => {
+    mockSupabase.auth.signOut.mockResolvedValue({
+      error: { message: 'Sign out failed', code: 'signout_error' },
+    });
+
+    const result = await signOut();
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe('Sign out failed');
+      expect(result.code).toBe('signout_error');
+    }
   });
 });
 

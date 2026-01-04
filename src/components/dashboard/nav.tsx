@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Calendar, Settings, LogOut, Link as LinkIcon, Menu, X } from "lucide-react";
@@ -34,6 +34,18 @@ export function DashboardNav({ baker }: DashboardNavProps) {
   ];
 
   const closeMenu = () => setIsMobileMenuOpen(false);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
 
   return (
     <>
@@ -81,6 +93,7 @@ export function DashboardNav({ baker }: DashboardNavProps) {
                 <Link
                   href={item.href}
                   onClick={closeMenu}
+                  aria-current={item.active ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                     item.active

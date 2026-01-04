@@ -57,13 +57,16 @@ export function SignupForm() {
           id="password"
           name="password"
           type="password"
-          placeholder="Create a password (min. 8 characters)"
+          placeholder="Create a password"
           minLength={8}
           required
           disabled={isPending}
           aria-invalid={!!error}
-          aria-describedby={error ? "form-error" : undefined}
+          aria-describedby={error ? "form-error password-requirements" : "password-requirements"}
         />
+        <p id="password-requirements" className="text-xs text-muted-foreground">
+          Must be at least 8 characters
+        </p>
       </div>
 
       <Button type="submit" className="w-full" disabled={isPending}>
