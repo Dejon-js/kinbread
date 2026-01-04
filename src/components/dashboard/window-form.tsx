@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { type DateRange } from "react-day-picker";
 import { createCapacityWindow, updateCapacityWindow, createCapacityWindowsForRange } from "@/app/actions/capacity-windows";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import type { CapacityWindow } from "@/types";
 
 interface WindowFormProps {
@@ -20,9 +23,11 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [isRangeMode, setIsRangeMode] = useState(false);
-  const [startDate, setStartDate] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const isEditing = !!capacityWindow;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -63,8 +68,8 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
     }
   }
 
-  // Get today's date in YYYY-MM-DD format for min attribute
-  const today = new Date().toISOString().split("T")[0];
+  // Format today as YYYY-MM-DD for the single date input's min attribute
+  const todayString = format(today, "yyyy-MM-dd");
 
   return (
     <form action={handleSubmit} className="space-y-6">
@@ -114,36 +119,28 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
       )}
 
       {isRangeMode && !isEditing ? (
-        <div id="range-date-panel" role="tabpanel" aria-labelledby="range-tab" className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="start_date">Start Date</Label>
-            <Input
-              id="start_date"
-              name="start_date"
-              type="date"
-              min={today}
-              required
-              disabled={isPending}
-              aria-invalid={!!error}
-              aria-describedby={error ? "form-error" : undefined}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="end_date">End Date</Label>
-            <Input
-              id="end_date"
-              name="end_date"
-              type="date"
-              min={startDate || today}
-              required
-              disabled={isPending}
-              aria-invalid={!!error}
-              aria-describedby={error ? "form-error" : undefined}
-            />
-          </div>
-          <p className="col-span-2 text-xs text-muted-foreground">
-            Create availability for all dates in this range. Existing dates will be skipped.
+        <div id="range-date-panel" role="tabpanel" aria-labelledby="range-tab" className="space-y-2">
+          <Label>Select Date Range</Label>
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            minDate={today}
+            disabled={isPending}
+            placeholder="Click to select dates"
+          />
+          {/* Hidden inputs for form submission */}
+          <input
+            type="hidden"
+            name="start_date"
+            value={dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : ""}
+          />
+          <input
+            type="hidden"
+            name="end_date"
+            value={dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : ""}
+          />
+          <p className="text-xs text-muted-foreground">
+            Click a start date, then click an end date. All dates in the range will be created.
           </p>
         </div>
       ) : (
@@ -154,7 +151,7 @@ export function WindowForm({ capacityWindow }: WindowFormProps) {
             name="date"
             type="date"
             defaultValue={capacityWindow?.date}
-            min={isEditing ? undefined : today}
+            min={isEditing ? undefined : todayString}
             required
             disabled={isPending}
             aria-invalid={!!error}
